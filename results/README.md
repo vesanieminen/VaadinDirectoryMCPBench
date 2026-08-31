@@ -1,16 +1,16 @@
 # VaadinBench results
 
-**[https://vaadin.github.io/vaadinbench-results/](https://vaadin.github.io/vaadinbench-results/)**
+**[https://vesanieminen.github.io/VaadinDirectoryMCPBench/](https://vesanieminen.github.io/VaadinDirectoryMCPBench/)**
 
-The published results for [VaadinBench](https://github.com/vaadin/vaadinbench):
+The published results for [VaadinBench](https://github.com/vesanieminen/VaadinDirectoryMCPBench):
 a leaderboard, and behind every trial the trajectory the agent actually produced.
-
-That repository is only the tasks. This one is only the results, so a run never
-touches the thing being measured.
+The site stays in `results/`, separate from the tasks it measures, and a GitHub
+Actions workflow publishes this directory as the root of the Pages site.
 
 ## Benchmarks
 
-The site holds more than one benchmark, and each is a folder under `data/`:
+The publisher can hold more than one benchmark, and each is a folder under
+`data/`. This repository currently publishes only `default`:
 
 ```text
 data/benchmarks.json                 the registry the list page reads
@@ -27,35 +27,36 @@ all, and the default is left out of the query string entirely, so every URL that
 worked before there was more than one benchmark still resolves to it.
 
 `benchmarks.json` is rebuilt by scanning `data/`, never edited. Deleting a
-folder unpublishes it; `./publish.py --registry` rebuilds the list after one.
+folder unpublishes it; `results/publish.py --registry` rebuilds the list after one.
 Everything on a card is counted from the benchmark's own index, so the list
 cannot disagree with the page it links to — the one thing a scan cannot infer is
 the name, which is why each folder carries a `benchmark.json`.
 
 ## Publishing a run
 
-A run happens on the machine with Docker and the model credentials. This repo
-turns its output into the site:
+A run happens on the machine with Docker and the model credentials. From the
+repository root, publish its output into the site:
 
 ```bash
-./publish.py --baselines ../vaadin-bench/tasks ../vaadin-bench/jobs/new-project-3models
-git add data && git commit -m "Publish new-project-3models" && git push
+results/publish.py --baselines tasks jobs/new-project-3models
+git add results/data && git commit -m "Publish new-project-3models" && git push
 ```
 
 That publishes into `default`. A run that belongs somewhere else names it, and
 names the benchmark the first time it is published:
 
 ```bash
-./publish.py --benchmark mcp-servers --name "MCP servers, head to head" \
-    --baselines ../vaadin-bench/tasks ../vaadin-bench/jobs/mcp-*
+results/publish.py --benchmark mcp-servers --name "MCP servers, head to head" \
+    --baselines tasks jobs/mcp-*
 ```
 
 The name and description stick: later publishes into the same benchmark keep
 them unless they are given again.
 
-The push *is* the deploy: GitHub Pages serves `main` from the repository root,
-so there is no workflow and nothing to build. Pass several job directories at
-once, or `--keep` to add a run without republishing the ones already there.
+The push triggers `.github/workflows/pages.yml`, which uploads `results/` as the
+site root and deploys it to GitHub Pages. There is no application build step.
+Pass several job directories at once, or `--keep` to add a run without
+republishing the ones already there.
 
 `--baselines` is temporary and is explained under [Rebuilt diffs](#rebuilt-diffs).
 Without it a run from after the container split publishes with an empty Changes
@@ -166,8 +167,9 @@ own stylesheet, so `app.css` carries its formulas evaluated at Aura's defaults
 and written out as literal `oklch()`. The header comment names the source files
 to diff against when Aura moves.
 
-They live at the repository root because that is where Pages serves this branch
-from; `.nojekyll` turns off the Jekyll pass, since there is nothing to render.
+They live in `results/`, which the Pages workflow uploads as the site root. The
+artifact is deployed directly, so there is no Jekyll pass or generated site
+directory to maintain.
 
 A trial's id is `base64(job|task|model|attempt)`, so a link to a trial survives a
 republish. The job is part of it because it has to be: without it, one task and
@@ -196,7 +198,7 @@ it calls and the command inside it, which is also what the step is labelled with
 ## Working on the site
 
 ```bash
-python3 -m http.server 8000
+python3 -m http.server 8000 --directory results
 ```
 
 To develop without a benchmark run, write a synthetic job first. It is built by
@@ -204,8 +206,9 @@ Harbor's own pydantic models, so it validates against the same schemas a real ru
 produces — and it needs Harbor, which the tasks repo already has installed:
 
 ```bash
-../vaadin-bench/.venv/bin/python fixtures/make_fixture.py
-./publish.py --benchmark scratch --name Scratch fixtures/jobs/example-3models
+.venv/bin/python results/fixtures/make_fixture.py
+results/publish.py --benchmark scratch --name Scratch \
+    results/fixtures/jobs/example-3models
 ```
 
 Into its own benchmark, not over `default`: publishing without `--benchmark`

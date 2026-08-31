@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Write a synthetic Harbor job directory, for developing the site without a run.
 
-    /path/to/vaadin-bench/.venv/bin/python fixtures/make_fixture.py
+    .venv/bin/python results/fixtures/make_fixture.py
 
 Harbor's own pydantic models do the writing, so the output validates against the
 same schemas a real run produces — `TrialResult` for `result.json` and ATIF for

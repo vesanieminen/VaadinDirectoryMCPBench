@@ -37,8 +37,8 @@ from pathlib import Path
 from typing import Any
 from xml.etree import ElementTree
 
-# The repository root is the site root: GitHub Pages serves this branch from `/`,
-# so the pages and their data sit beside the tooling that writes them.
+# The results directory is the site root: the Pages workflow uploads it as one
+# artifact, so the pages and their data sit beside the tooling that writes them.
 SITE = Path(__file__).resolve().parent
 DATA = SITE / "data"
 
