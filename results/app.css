@@ -1,0 +1,774 @@
+/* Vaadin Aura, transplanted.
+
+   Aura computes almost every colour at runtime from `--aura-background-color`
+   using relative-colour syntax, which needs Aura's own stylesheet and the web
+   components that carry it. This site ships neither, so the values below are
+   Aura's formulas evaluated by hand at its defaults -- contrast level 1,
+   surface level 1, surface opacity 0.5 -- and written out as literal oklch().
+   Anything derived from another token still uses color-mix(), so changing
+   --bg or --accent moves the rest with it.
+
+   Sources: @vaadin/aura/src/{color,palette,surface,typography}.css. */
+
+:root {
+    color-scheme: light dark;
+
+    /* Aura's own palette, verbatim. */
+    --aura-red: oklch(.59 .2 25);
+    --aura-orange: oklch(.61 .35 87);
+    --aura-yellow: oklch(.89 .3 98);
+    --aura-green: oklch(.6 .2 155);
+    --aura-blue: oklch(.55 .2 264);
+    --aura-purple: oklch(.58 .22 290);
+    --aura-red-text: oklch(.45 .18 25);
+    --aura-orange-text: oklch(.55 .315 87);
+    --aura-yellow-text: oklch(.525 .27 98);
+    --aura-green-text: oklch(.45 .18 155);
+    --aura-blue-text: oklch(.45 .18 264);
+    --aura-purple-text: oklch(.465 .198 290);
+
+    /* Two additions to Aura's six: a teal for when the palette runs out before
+       the axis does, and a neutral for a baseline -- a value that means "none of
+       the above" reads better in ink than in a colour of its own. */
+    --aura-teal: oklch(.62 .13 200);
+    --aura-teal-text: oklch(.4 .117 200);
+    --aura-neutral: oklch(.55 .01 248);
+    --aura-neutral-text: oklch(.42 .008 248);
+
+    /* --aura-background-color-light, and the two stops Aura's gradient adds. */
+    --bg: oklch(.95 .005 248);
+    --bg-glow: oklch(.965 .005 248);
+    --bg-alt: oklch(.955 0 251);
+
+    /* --aura-surface-color-solid at level 1: l + (1 - l) * 0.6016. */
+    --surface: oklch(.98 .0027 248);
+    --ink: oklch(.15 .004 248);
+    --border-base: oklch(.1 .005 248);
+    --container-base: oklch(.1 .0075 248);
+
+    --accent: var(--aura-blue);
+    --accent-text: oklch(.5 .18 264);
+    --accent-contrast: #fff;
+
+    /* The `-text` palette variants: min(.55, .3 + .75c) lightness, .9c chroma. */
+    --pass: oklch(.45 .18 155);
+    --fail: oklch(.45 .18 25);
+    --diff-mix: 10%;
+
+    --shadow-xs: 0 1px 2px oklch(.15 .004 248 / .06);
+    --shadow-s: 0 2px 8px oklch(.15 .004 248 / .07);
+
+    --font: "Instrument Sans", system-ui, ui-sans-serif, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    --radius-s: 4px;
+    --radius-m: 6px;
+    --radius-l: 10px;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --aura-red-text: oklch(.8 .18 25);
+        --aura-orange-text: oklch(.8 .315 87);
+        --aura-yellow-text: oklch(.8 .27 98);
+        --aura-green-text: oklch(.8 .18 155);
+        --aura-blue-text: oklch(.8 .18 264);
+        --aura-purple-text: oklch(.8 .198 290);
+        --aura-teal-text: oklch(.8 .117 200);
+        --aura-neutral-text: oklch(.78 .008 248);
+        --bg: oklch(.2 .01 260);
+        --bg-glow: oklch(.23 .012 260);
+        --bg-alt: oklch(.185 .008 260);
+        --surface: oklch(.23 .01 260);
+        --ink: oklch(1 .002 260);
+        --border-base: oklch(.85 .008 260);
+        --container-base: oklch(1 .01 260);
+        --accent-text: oklch(.8 .18 264);
+        --pass: oklch(.8 .18 155);
+        --fail: oklch(.8 .18 25);
+        --diff-mix: 22%;
+        --shadow-xs: 0 1px 2px oklch(0 0 0 / .4);
+        --shadow-s: 0 2px 8px oklch(0 0 0 / .45);
+    }
+}
+
+/* Everything below is derived, so it follows the tokens above into either
+   scheme without being restated. */
+:root {
+    --meta: color-mix(in oklch, var(--ink) 65%, transparent);
+    --faint: color-mix(in oklch, var(--ink) 45%, transparent);
+    --hairline: color-mix(in srgb, var(--border-base) 8%, transparent);
+    --rule: color-mix(in srgb, var(--border-base) 20%, transparent);
+    --card-border: color-mix(in srgb, var(--border-base) 16%, transparent);
+    --container: color-mix(in srgb, var(--container-base) 4%, transparent);
+    --container-strong: color-mix(in srgb, var(--container-base) 8.5%, transparent);
+    /* oklab, not oklch: oklch is polar, so mixing a saturated colour with a
+       near-neutral one interpolates the hue angle and drags the result towards
+       the neutral's nominal hue -- 10% green over a hue-248 surface came out
+       blue. oklab is rectangular, so a small amount of green reads as green.
+       Aura mixes in oklab and srgb for the same reason. */
+    --pass-bg: color-mix(in oklab, var(--aura-green) 14%, var(--surface));
+    --fail-bg: color-mix(in oklab, var(--aura-red) 14%, var(--surface));
+    --add: var(--pass);
+    --add-bg: color-mix(in oklab, var(--aura-green) var(--diff-mix), var(--surface));
+    --add-gutter: color-mix(in oklab, var(--aura-green) 45%, var(--surface));
+    --del: var(--fail);
+    --del-bg: color-mix(in oklab, var(--aura-red) var(--diff-mix), var(--surface));
+    --del-gutter: color-mix(in oklab, var(--aura-red) 45%, var(--surface));
+}
+
+* { box-sizing: border-box; }
+
+/* Aura sets its gradient on <html> with a fixed viewport-sized background, so
+   the glow stays put while the page scrolls under it. */
+html {
+    background:
+        radial-gradient(circle at 0% 0%, var(--bg-glow), transparent 30%),
+        radial-gradient(circle at 25% 0%, var(--bg) 33%, var(--bg-alt)),
+        var(--bg);
+    background-size: 100vw 100vh;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+}
+
+body {
+    margin: 0;
+    padding: 2rem 1.5rem 5rem;
+    color: var(--ink);
+    font: 14px/1.4 var(--font);
+    -webkit-font-smoothing: antialiased;
+}
+
+main { max-width: 1080px; margin: 0 auto; }
+
+a { color: var(--accent-text); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ------------------------------------------------------------------ brand */
+
+.brand { display: flex; align-items: center; margin: 0 0 1.75rem; }
+/* The wordmark is the way home, so it is a link -- but a link that looks like
+   the heading it already was, underlined only on hover. */
+.brand > a {
+    display: inline-flex; align-items: center; gap: .6rem;
+    color: inherit; text-decoration: none;
+}
+.brand > a:hover h1 { text-decoration: underline; text-underline-offset: 3px; }
+.brand h1 {
+    font-size: 1.15rem; font-weight: 600; letter-spacing: -.01em;
+    margin: 0; color: var(--ink);
+}
+.brand .sub { color: var(--faint); font-size: .82rem; margin-left: .1rem; }
+
+/* The reindeer draws itself once, then breathes. `pathLength="1"` lets the
+   dash length be 1 regardless of the real geometry, so no measuring. */
+.mark { width: 26px; height: 30px; flex: none; overflow: visible; }
+.mark path {
+    fill: var(--accent);
+    fill-opacity: 0;
+    stroke: var(--accent);
+    stroke-width: 14;
+    stroke-linejoin: round;
+    stroke-linecap: round;
+    stroke-dasharray: 1;
+    stroke-dashoffset: 1;
+    animation:
+        mark-draw 2.2s cubic-bezier(.4, 0, .2, 1) forwards,
+        mark-ink 1.4s ease-out 1.5s forwards;
+}
+@keyframes mark-draw { to { stroke-dashoffset: 0; } }
+@keyframes mark-ink { to { fill-opacity: 1; stroke-opacity: 0; } }
+
+/* The ambient part: 1px of drift over 16 seconds. Slow enough to read as the
+   page being alive rather than as something moving. */
+.mark { animation: mark-breathe 16s ease-in-out 3s infinite; }
+@keyframes mark-breathe {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-1px) scale(1.015); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .mark, .mark path { animation: none; }
+    .mark path { fill-opacity: 1; stroke-opacity: 0; }
+}
+
+h2 {
+    font-size: .72rem; margin: 2rem 0 .5rem; color: var(--faint);
+    text-transform: uppercase; letter-spacing: .07em; font-weight: 500;
+}
+h2.title {
+    font-size: 1.25rem; font-weight: 600; color: var(--ink);
+    text-transform: none; letter-spacing: -.015em;
+    margin: 0 0 .35rem;
+}
+p.lede { margin: 0 0 1.5rem; color: var(--faint); font-size: .85rem; line-height: 1.5; }
+.crumb {
+    display: flex; align-items: baseline; flex-wrap: wrap; gap: .5rem;
+    margin: 0 0 1.6rem; font-size: .82rem; color: var(--faint);
+}
+.crumb-sep { color: var(--rule); font-size: .95rem; }
+.crumb-dot { color: var(--faint); }
+
+.banner {
+    margin: 0 0 1.25rem;
+    padding: .7rem .9rem;
+    border: 1px solid var(--rule);
+    border-left: 3px solid var(--fail);
+    border-radius: var(--radius-m);
+    background: var(--surface);
+    box-shadow: var(--shadow-xs);
+    color: var(--meta);
+    font-size: .86rem;
+}
+
+/* ------------------------------------------------------- benchmark switch */
+
+/* The bar sits opposite the wordmark: the page on the left, the way to the rest
+   of them on the right. It is written by common.js from the registry and stays
+   empty while there is only one benchmark, so the header does not grow a
+   control that leads nowhere.
+
+   The left margin is not only the flex push. If this stylesheet is ever stale
+   in a reader's browser -- the pages carry no cache-busting -- `auto` collapses
+   and the link lands against the wordmark; a real margin keeps them apart
+   whatever else fails to apply. */
+.bench-bar {
+    margin-left: auto; padding-left: 2rem;
+    display: flex; align-items: center; font-size: .82rem;
+}
+.bench-switch {
+    color: var(--ink); text-decoration: none; white-space: nowrap;
+    border: 1px solid var(--rule); border-radius: var(--radius-m);
+    padding: .28rem .6rem; background: var(--surface);
+    box-shadow: var(--shadow-xs);
+}
+.bench-switch:hover { border-color: var(--faint); }
+
+.page-title { font-size: 1.5rem; font-weight: 600; margin: 0 0 .4rem; }
+.page-lede { color: var(--meta); font-size: .88rem; max-width: 62ch; margin: 0 0 1.5rem; }
+
+.bench-list { list-style: none; padding: 0; margin: 0; display: grid; gap: .9rem; }
+.bench-card > a {
+    display: block; text-decoration: none; color: inherit;
+    border: 1px solid var(--rule); border-radius: var(--radius-m);
+    background: var(--surface); box-shadow: var(--shadow-xs);
+    padding: 1rem 1.1rem;
+}
+.bench-card > a:hover { border-color: var(--faint); }
+/* A card's title is a name, not one of the small uppercase section labels the
+   bare h2 rule draws. */
+.bench-card h2 {
+    font-size: 1rem; font-weight: 600; margin: 0 0 .35rem; color: var(--ink);
+    text-transform: none; letter-spacing: -.01em;
+    display: flex; align-items: center; gap: .5rem; flex-wrap: wrap;
+}
+.bench-desc { color: var(--meta); font-size: .86rem; margin: 0 0 .6rem; max-width: 70ch; }
+.bench-facts { color: var(--faint); font-size: .78rem; margin: 0 0 .5rem; }
+.bench-score { font-size: .86rem; margin: 0; display: flex; align-items: baseline; gap: .6rem; }
+
+/* ------------------------------------------------------------------- tabs */
+
+.tabs { display: flex; gap: 1.1rem; border-bottom: 1px solid var(--hairline); margin-bottom: 1.1rem; }
+.tabs button {
+    appearance: none; border: 0; background: none; cursor: pointer;
+    font: inherit; font-size: .88rem; font-weight: 500; color: var(--faint);
+    padding: 0 0 .5rem; margin-bottom: -1px;
+    border-bottom: 2px solid transparent;
+}
+.tabs button:hover { color: var(--ink); }
+.tabs button[aria-selected="true"] { color: var(--accent-text); border-bottom-color: var(--accent); }
+
+/* ---------------------------------------------------------------- filters */
+
+.filters { display: flex; flex-direction: column; gap: .4rem; margin-bottom: 1.3rem; }
+.filter { display: flex; align-items: center; flex-wrap: wrap; gap: .3rem; }
+.filter > .key {
+    width: 6rem; flex: none; color: var(--faint);
+    font-size: .7rem; text-transform: uppercase; letter-spacing: .07em; font-weight: 500;
+}
+/* A chip is its own legend entry: --chip is the value's palette colour, set
+   inline, and everything here is expressed in terms of it. Unselected chips
+   keep the swatch but not the tint, so the row of chips reads as a key before
+   anything is filtered, and a selection is still unmistakable. */
+.chip {
+    appearance: none; cursor: pointer; font: inherit; font-size: .8rem; font-weight: 500;
+    display: inline-flex; align-items: center; gap: .35rem;
+    padding: .2rem .7rem .2rem .5rem; border-radius: 999px;
+    border: 1px solid var(--rule); background: var(--surface);
+    color: var(--chip-text, var(--meta)); box-shadow: var(--shadow-xs);
+}
+/* Clearing a row is not one of its values, so it does not wear a chip's pill.
+   Quieter than the chips beside it and set apart by a margin: it undoes the
+   selection rather than adding to it, and should never be the thing the eye
+   picks first in a row of colours. Sized to the chips it sits among, so the row
+   keeps one height. */
+.chip-clear {
+    appearance: none; cursor: pointer; border: 0; background: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 1.4rem; height: 1.4rem; padding: 0; margin-left: .3rem;
+    border-radius: 999px; color: var(--faint);
+}
+.chip-clear svg { width: 12px; height: 12px; }
+.chip-clear path {
+    fill: none; stroke: currentColor; stroke-width: 1.4; stroke-linecap: round;
+}
+.chip-clear:hover {
+    color: var(--ink);
+    background: color-mix(in oklab, var(--ink) 8%, transparent);
+}
+
+.chip .swatch {
+    width: 9px; height: 9px; flex: none; border-radius: 999px;
+    background: var(--chip, var(--faint));
+}
+.chip .glyph { width: 12px; height: 12px; flex: none; overflow: visible; }
+.chip:hover { border-color: color-mix(in oklab, var(--chip, var(--accent)) 55%, var(--card-border)); }
+.chip[aria-pressed="true"] {
+    background: color-mix(in oklab, var(--chip, var(--accent)) 14%, var(--surface));
+    border-color: color-mix(in oklab, var(--chip, var(--accent)) 50%, var(--card-border));
+    box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--chip, var(--accent)) 25%, transparent);
+}
+.chip[aria-pressed="false"] .swatch, .chip[aria-pressed="false"] .glyph { opacity: .75; }
+.chip[aria-pressed="false"]:hover .swatch,
+.chip[aria-pressed="false"]:hover .glyph { opacity: 1; }
+
+/* The gloss under the config chips. Aligned to the chips rather than the key
+   column, so it reads as a caption on them; small and faint, because it is a
+   footnote to the table and not a thing to read first. */
+.config-notes {
+    display: grid; grid-template-columns: max-content minmax(0, 1fr);
+    column-gap: .6rem; row-gap: .15rem;
+    margin: .3rem 0 0; padding-left: 6rem; font-size: .75rem; line-height: 1.45;
+}
+.config-notes dt { color: var(--meta); font-weight: 500; }
+.config-notes dd { margin: 0; color: var(--faint); }
+/* Narrow enough and the two columns stop helping: the names wrap away from
+   their descriptions, so they stack instead. */
+@media (max-width: 640px) {
+    .config-notes { grid-template-columns: minmax(0, 1fr); padding-left: 0; row-gap: 0; }
+    .config-notes dd { margin-bottom: .3rem; }
+}
+
+/* ----------------------------------------------------------------- tables */
+
+.wrap {
+    margin: 0 0 1.25rem;
+    overflow-x: auto; overscroll-behavior-x: contain;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-l);
+    box-shadow: var(--shadow-xs);
+}
+table { width: 100%; min-width: 680px; border-collapse: collapse; font-size: .88rem; }
+th, td { text-align: left; padding: .6rem .9rem; white-space: nowrap; }
+th {
+    color: var(--faint); font-weight: 500; font-size: .7rem;
+    text-transform: uppercase; letter-spacing: .07em;
+    border-bottom: 1px solid var(--card-border);
+    background: var(--container);
+}
+thead tr:first-child th:first-child { border-top-left-radius: var(--radius-l); }
+thead tr:first-child th:last-child { border-top-right-radius: var(--radius-l); }
+td { border-bottom: 1px solid var(--hairline); }
+tbody tr:last-child td { border-bottom: 0; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+
+/* A sortable header is still a header: it takes the click itself rather than
+   turning the row into a row of controls. The column being sorted by is the one
+   in full-contrast ink, and its arrow says which way. Every header keeps a slot
+   for that arrow, so nothing shifts sideways as the sort moves. */
+th.sort { cursor: pointer; user-select: none; }
+th.sort:hover { color: var(--ink); }
+th.sort:not([aria-sort="none"]) { color: var(--ink); }
+.arrow { display: inline-block; width: .6em; margin-left: .25rem; }
+
+/* A clickable row: the whole row is the target, so the hover tint has to be
+   visible enough to say so, and nothing inside it should look like the one
+   clickable part -- the task link keeps the row's own colour until hover. */
+tr.pick { cursor: pointer; }
+tr.pick:hover { background: var(--container-strong); }
+tr.pick td.name a { color: inherit; text-decoration: none; }
+tr.pick:hover td.name a { text-decoration: underline; text-underline-offset: 2px; }
+/* The row carries its model colour in --row and its config colour in --cfg, so
+   the name cell can label both without either being read off the bar alone. */
+td .sub {
+    display: flex; align-items: center; gap: .3rem;
+    color: var(--cfg, var(--faint)); font-size: .76rem; font-weight: 500; margin-top: .15rem;
+}
+td .sub .glyph { width: 11px; height: 11px; flex: none; overflow: visible; }
+td.name .who { display: flex; align-items: center; gap: .4rem; }
+td.name .swatch {
+    width: 9px; height: 9px; flex: none; border-radius: 999px;
+    background: var(--row, var(--faint));
+}
+td.rank { color: var(--faint); font-variant-numeric: tabular-nums; width: 1.5rem; }
+td.name { font-weight: 500; }
+
+/* The score column doubles as the bar chart: one track per row, filled to the
+   pass rate, coloured by model so a row and its dot in the chart match. */
+td.bar { width: 38%; min-width: 130px; }
+.bar-track {
+    display: block; height: 9px; border-radius: 999px;
+    background: var(--container-strong); overflow: hidden;
+}
+.bar-fill {
+    display: block; height: 100%; border-radius: 999px; min-width: 3px;
+    box-shadow: inset 0 0 0 1px oklch(0 0 0 / .06);
+}
+
+/* ------------------------------------------------------------------ chart */
+
+.chart-head {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: .8rem; margin: 0 0 .9rem;
+}
+.chart-head .title { margin: 0; }
+
+/* One control, two states -- a pill with the chosen half raised out of it, so
+   which axis is showing is legible without reading the labels. */
+.seg {
+    display: inline-flex; flex: none; gap: .15rem; padding: .15rem;
+    background: var(--container); border: 1px solid var(--rule);
+    border-radius: 999px;
+}
+.seg button {
+    appearance: none; border: 0; cursor: pointer; font: inherit;
+    font-size: .78rem; font-weight: 500; color: var(--meta);
+    padding: .28rem .8rem; border-radius: 999px; background: none;
+}
+.seg button:hover { color: var(--ink); }
+.seg button[aria-pressed="true"] {
+    color: var(--accent-text); background: var(--surface);
+    box-shadow: var(--shadow-xs);
+}
+
+.chart-wrap {
+    position: relative;
+    padding: 1rem 1.1rem .6rem;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-l);
+    box-shadow: var(--shadow-xs);
+}
+.chart { width: 100%; height: auto; display: block; overflow: visible; }
+.chart .hit { fill: transparent; }
+.tip {
+    position: absolute; z-index: 2; pointer-events: none;
+    padding: .3rem .5rem; border-radius: var(--radius-s);
+    border: 1px solid var(--rule); background: var(--surface);
+    box-shadow: var(--shadow-s);
+    color: var(--ink); font-size: .78rem; white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+}
+.tip[hidden] { display: none; }
+.chart .axis { stroke: var(--rule); }
+.chart .gridline { stroke: var(--hairline); }
+.chart .tick { fill: var(--faint); font: 11px var(--font); font-variant-numeric: tabular-nums; }
+.chart .axis-title { fill: var(--faint); font: 500 10px var(--font); text-transform: uppercase; letter-spacing: .07em; }
+.chart .dot { stroke: var(--surface); stroke-width: 1.5; fill-opacity: .9; }
+.chart .dot-label { font: 500 11px var(--font); }
+.legend { display: flex; flex-wrap: wrap; gap: .9rem; margin-top: .9rem; font-size: .8rem; color: var(--meta); }
+.legend span { display: inline-flex; align-items: center; gap: .35rem; }
+.legend i { width: 8px; height: 8px; border-radius: 999px; }
+.legend svg, .legend .glyph { width: 13px; height: 13px; overflow: visible; }
+.legend .shape { fill: var(--faint); }
+
+/* ----------------------------------------------------------------- badges */
+
+.badge {
+    display: inline-block; padding: .05rem .4rem; border-radius: var(--radius-s);
+    font-size: .75rem; font-weight: 600;
+}
+.badge.pass { color: var(--pass); background: var(--pass-bg); }
+.badge.fail { color: var(--fail); background: var(--fail-bg); }
+.badge.tag { color: var(--meta); background: var(--container-strong); font-weight: 500; }
+.note { color: var(--faint); font-size: .76rem; white-space: nowrap; }
+
+/* One row of figures, so the values carry the emphasis the labels do not. */
+table.summary { min-width: 0; }
+table.summary td {
+    font-size: 1.05rem; font-variant-numeric: tabular-nums;
+    border-bottom: 0; padding-top: .45rem; padding-bottom: .7rem;
+}
+
+/* ------------------------------------------------------------- trajectory */
+
+.split { display: grid; grid-template-columns: 246px minmax(0, 1fr); gap: 1.5rem; }
+@media (max-width: 760px) {
+    .split { grid-template-columns: minmax(0, 1fr); gap: 1rem; }
+}
+.split > .steps { min-width: 0; }
+/* File paths need more room than event-type labels do. */
+@media (min-width: 761px) { .split.changes { grid-template-columns: 268px minmax(0, 1fr); } }
+
+.panel-title {
+    margin: 0 0 .6rem; font-size: .84rem; font-weight: 600; color: var(--ink);
+}
+.panel-note { margin: -.35rem 0 .7rem; font-size: .76rem; color: var(--faint); }
+
+/* The event-type outline. A row is label, a dotted leader, and a count -- the
+   leader is what ties a short label to a number on the far side of the panel. */
+.events { position: sticky; top: 1rem; align-self: start; }
+.etypes, .filelist { list-style: none; margin: 0; padding: 0; }
+.etype-row { padding-left: calc(var(--depth, 0) * .95rem); }
+.etype-row + .etype-row { margin-top: .1rem; }
+.etype {
+    display: flex; align-items: center; gap: .45rem; width: 100%;
+    appearance: none; border: 0; background: none; cursor: pointer;
+    padding: .18rem 0; font: inherit; font-size: .82rem; color: var(--faint);
+    text-align: left;
+}
+.etype:hover { color: var(--ink); }
+.etype .box {
+    flex: none; width: 12px; height: 12px; border-radius: 3px;
+    border: 1px solid var(--rule); background: var(--surface);
+    display: grid; place-items: center;
+}
+.etype .box::after { content: ""; width: 6px; height: 6px; border-radius: 1px; }
+.etype[data-state="on"] { color: var(--ink); }
+.etype[data-state="on"] .box { border-color: var(--accent); }
+.etype[data-state="on"] .box::after { background: var(--accent); }
+.etype[data-state="some"] { color: var(--ink); }
+.etype[data-state="some"] .box { border-color: var(--accent); }
+.etype[data-state="some"] .box::after {
+    background: var(--accent); height: 2px; width: 7px; border-radius: 2px;
+}
+.etype .lbl { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.etype .lead {
+    flex: 1 1 auto; min-width: .6rem;
+    border-bottom: 1px dotted var(--rule); translate: 0 -.15em;
+}
+.etype .cnt { flex: none; font-variant-numeric: tabular-nums; }
+
+/* The file list, and the pane the selected file's diff appears in. */
+.files { align-self: start; }
+@media (min-width: 761px) { .files { position: sticky; top: 1rem; max-height: calc(100vh - 3rem); overflow-y: auto; } }
+.filelist li + li { margin-top: .1rem; }
+.file-pick {
+    display: flex; align-items: flex-start; gap: .5rem; width: 100%;
+    appearance: none; border: 0; cursor: pointer; text-align: left;
+    padding: .35rem .45rem; border-radius: var(--radius-s);
+    background: none; font: inherit; font-size: .8rem; color: var(--meta);
+}
+.file-pick:hover { background: var(--container); color: var(--ink); }
+.file-pick[aria-current="true"] {
+    background: color-mix(in oklab, var(--accent) 12%, var(--surface));
+    color: var(--ink); font-weight: 500;
+}
+.file-pick .fpath { flex: 1 1 auto; min-width: 0; }
+.file-pick .fname,
+.file-pick .fdir {
+    display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.fdir { color: var(--faint); font-size: .73rem; margin-top: .05rem; }
+.fstat { flex: none; font-size: .75rem; font-variant-numeric: tabular-nums; }
+.file-pick .fstat { padding-top: .1rem; }
+.stat-add { color: var(--add); }
+.stat-del { color: var(--del); margin-left: .3rem; }
+
+.diff-pane { min-width: 0; }
+.diff-head {
+    display: flex; align-items: baseline; gap: .6rem;
+    padding: .5rem .8rem;
+    border: 1px solid var(--card-border); border-bottom: 0;
+    border-radius: var(--radius-l) var(--radius-l) 0 0;
+    background: var(--container-strong);
+}
+.diff-head .fpath { flex: 1 1 auto; min-width: 0; overflow-x: auto; }
+.diff-head code { font-family: var(--mono); font-size: .8rem; color: var(--ink); }
+.diff-pane .diff {
+    margin-top: 0;
+    border-radius: 0 0 var(--radius-l) var(--radius-l);
+}
+
+/* The trace. A rail of typed icons down the left, prose in cards, tool calls as
+   one collapsed line each -- so the shape of a run is legible before a word of
+   it is read, and a thought is never buried inside a card about something else. */
+.trace { list-style: none; margin: 0; padding: 0; }
+.trace-count { margin: 0 0 .7rem; }
+
+.tr { display: grid; grid-template-columns: 26px minmax(0, 1fr); gap: .75rem; }
+.tr-rail { position: relative; display: flex; justify-content: center; }
+/* The line runs the full height of the cell and the icon covers it, which joins
+   consecutive entries without needing to know which one is last. */
+.tr-rail::before {
+    content: ""; position: absolute; top: 0; bottom: 0;
+    width: 1px; background: var(--rule);
+}
+.tr:first-child .tr-rail::before { top: 13px; }
+.tr:last-child .tr-rail::before { bottom: calc(100% - 13px); }
+.tr-icon {
+    position: relative; z-index: 1; margin-top: 1px;
+    width: 24px; height: 24px; border-radius: 999px;
+    border: 1px solid var(--card-border); background: var(--surface);
+    display: grid; place-items: center; color: var(--faint);
+}
+.tr-icon svg { width: 13px; height: 13px; }
+.tr-body { min-width: 0; padding-bottom: .6rem; }
+
+.tr[data-type="prompt"] .tr-icon,
+.tr[data-type="message"] .tr-icon { color: var(--accent-text); border-color: var(--accent); }
+.tr[data-type="thinking"] .tr-icon { color: var(--aura-purple-text); }
+
+.tr-card {
+    padding: .75rem .9rem;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-m);
+    box-shadow: var(--shadow-xs);
+}
+.tr-label {
+    display: block; margin-bottom: .4rem;
+    font-size: .66rem; font-weight: 600; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--faint);
+}
+.tr-step { margin-left: .5rem; font-weight: 400; letter-spacing: .04em; }
+.tr-text {
+    white-space: pre-wrap; overflow-wrap: anywhere;
+    line-height: 1.65; color: var(--ink);
+}
+
+/* Rendered Markdown. The page's own h2 is a small uppercase section label, so
+   every heading level is restated here -- inheriting that would turn a prompt's
+   headings into captions. */
+.md { color: var(--ink); line-height: 1.65; overflow-wrap: anywhere; }
+.md > :first-child { margin-top: 0; }
+.md > :last-child { margin-bottom: 0; }
+.md p { margin: 0 0 .8em; }
+.md h1, .md h2, .md h3, .md h4, .md h5, .md h6 {
+    margin: 1.3em 0 .5em; color: var(--ink); font-weight: 600;
+    text-transform: none; letter-spacing: -.01em;
+}
+.md h1 { font-size: 1.2rem; }
+.md h2 { font-size: 1.05rem; }
+.md h3 { font-size: .95rem; }
+.md h4, .md h5, .md h6 { font-size: .9rem; }
+.md ul, .md ol { margin: 0 0 .8em; padding-left: 1.35em; }
+.md li { margin: .2em 0; }
+.md li > ul, .md li > ol { margin: .2em 0 .1em; }
+.md code {
+    font-family: var(--mono); font-size: .87em;
+    padding: .05em .2em; border-radius: var(--radius-s);
+    background: var(--container-strong); color: var(--ink);
+}
+.md pre { margin: 0 0 .9em; }
+.md pre code { padding: 0; background: none; font-size: 1em; }
+.md blockquote {
+    margin: 0 0 .8em; padding: .1em 0 .1em .9em;
+    border-left: 2px solid var(--rule); color: var(--meta);
+}
+.md hr { margin: 1.2em 0; border: 0; border-top: 1px solid var(--rule); }
+.md strong { font-weight: 600; }
+.md a { text-decoration: underline; }
+
+/* A standalone Markdown block -- the Instruction tab -- is content, so it sits
+   on a surface like every other block. */
+.md.card {
+    padding: 1.1rem 1.25rem;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-l);
+    box-shadow: var(--shadow-xs);
+}
+.tr[data-type="prompt"] .tr-card { border-left: 2px solid var(--accent); }
+
+details.tr-tool > summary {
+    display: flex; align-items: baseline; gap: .6rem; cursor: pointer;
+    padding: .45rem .7rem;
+    background: var(--surface);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-m);
+    list-style: none;
+}
+details.tr-tool > summary::-webkit-details-marker { display: none; }
+details.tr-tool[open] > summary { border-radius: var(--radius-m) var(--radius-m) 0 0; }
+details.tr-tool > summary:hover { background: var(--container-strong); }
+.tr-tool .tname {
+    flex: none; font-size: .66rem; font-weight: 600; letter-spacing: .09em;
+    text-transform: uppercase; color: var(--accent-text);
+}
+.tr-tool .tsum {
+    flex: 1 1 auto; min-width: 0;
+    font-family: var(--mono); font-size: .78rem; color: var(--meta);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.tr-tool .tmeta {
+    flex: none; font-size: .72rem; color: var(--faint);
+    font-variant-numeric: tabular-nums;
+}
+/* A chevron that turns, so open and closed are distinguishable without colour. */
+.tr-tool .tmeta::after {
+    content: ""; display: inline-block; margin-left: .5rem; translate: 0 -1px;
+    width: 5px; height: 5px; border: 1px solid var(--faint);
+    border-width: 0 1px 1px 0; rotate: -45deg;
+    transition: rotate .12s ease-out;
+}
+details.tr-tool[open] .tmeta::after { rotate: 45deg; }
+.tr-tool > pre {
+    margin: 0;
+    border-radius: 0 0 var(--radius-m) var(--radius-m);
+    border-top: 0;
+    box-shadow: none;
+}
+
+/* ------------------------------------------------------------------- code */
+
+pre {
+    margin: .35rem 0 1.25rem;
+    padding: .8rem .9rem;
+    background: var(--surface);
+    color: var(--ink);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-l);
+    box-shadow: var(--shadow-xs);
+    overflow-x: auto;
+    font-family: var(--mono);
+    font-size: .79rem;
+    line-height: 1.55;
+    white-space: pre;
+}
+pre.wrapped { white-space: pre-wrap; overflow-wrap: anywhere; }
+
+/* A line's kind belongs to the whole line, so it gets the whole line. `.rows`
+   is as wide as the longest one, which is what lets a tint run to the right
+   edge instead of stopping where the text does. */
+.diff {
+    margin: .35rem 0 0; overflow-x: auto;
+    border: 1px solid var(--hairline); border-radius: var(--radius-m);
+    background: var(--surface);
+}
+.diff .rows { min-width: max-content; font-family: var(--mono); font-size: .79rem; line-height: 1.6; }
+.diff .dl {
+    display: block; padding: 0 .8rem 0 .5rem;
+    white-space: pre; border-left: 3px solid transparent;
+    color: var(--meta);
+}
+.diff .dl.add { background: var(--add-bg); color: var(--add); border-left-color: var(--add-gutter); }
+.diff .dl.del { background: var(--del-bg); color: var(--del); border-left-color: var(--del-gutter); }
+.diff .dl.hunk { color: var(--faint); background: var(--container); }
+.diff .dl.file {
+    color: var(--ink); background: var(--container-strong); font-weight: 600;
+    padding: .3rem .8rem .3rem .5rem;
+    border-top: 1px solid var(--hairline);
+}
+.diff .rows > .dl.file:first-child { border-top: 0; }
+.diff .dl.meta { color: var(--faint); }
+
+.truncated { color: var(--faint); font-size: .76rem; margin-top: .35rem; }
+
+/* A rebuilt diff is not a captured one, and the difference has to survive a
+   glance. Set apart from the diff below it rather than tucked into the file
+   list, where the eye going straight to the code would miss it. */
+.rebuilt {
+    color: var(--faint); font-size: .78rem; line-height: 1.5;
+    margin: 0 0 .9rem; padding: .55rem .7rem;
+    border-left: 2px solid var(--aura-orange);
+    background: color-mix(in oklab, var(--aura-orange) 7%, var(--surface));
+    border-radius: 0 4px 4px 0;
+}
+.rebuilt code { font-size: .95em; }
+.empty { color: var(--faint); }
+footer {
+    max-width: 1080px; margin: 3.5rem auto 0; padding-top: 1rem;
+    border-top: 1px solid var(--hairline);
+    color: var(--faint); font-size: .8rem;
+}
